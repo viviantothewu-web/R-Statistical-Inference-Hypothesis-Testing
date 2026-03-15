@@ -1,0 +1,342 @@
+---
+title: "STATS Problem set 5"
+author: "vivian wu"
+date: "2025-09-21"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Quesiton 1
+
+Consider an urn that contains 10 tickets. 
+labelled 1. {1,1,1,1,2,5,5,10,10,10}
+
+```{r}
+urn=c(1,1,1,1,2,5,5,10,10,10)
+```
+
+probability for each draw
+probabilities: P(X=1)=4/10, P(X=2)=1/10, P(X=5)=2/10, P(X=10)=3/10.
+```{r}
+prob= c(0.4,0.1,0.2,0.3)
+mu=mean(urn) #e(x), true mean
+var= mean(urn^2) - mean(urn)^2 #true variance
+sd=sqrt(var)
+mu;var;sd
+```
+
+2. From this urn, I propose to draw (with replacement) n = 40 tickets. Let Y denote the sum of the values on the tickets that are drawn.
+
+
+```{r}
+#sum of Y 
+n=40
+EY=n*mu
+VarY=n*var
+SDY=sqrt(VarY)
+EY;VarY;SDY
+#Total of 40 tickets is usually around 184, give or take ~25
+```
+
+```{r}
+#sample mean 
+EX=mu #mean of sample mean
+VarX=var/n
+SDX=sqrt(VarX)
+EX;VarX;SDX
+#average of 40 tickets is usually around 4.6, give or take at ~0.60
+```
+
+3. To approximate P(170.5 < Y < 199.5), one Math 351 student writes an R function urn.model that simulates the proposed experiment. Evaluating urn.model is like observing a value, y, of the random variable Y. Then she writes a loop that repeatedly evaluates urn.model and computes the proportion of times that urn.model produces y  (170.5,199.5). She reasons that,
+
+4. if she evaluates urn.model a large number of times, then the observed proportion of y  (170.5,199.5) should approximate P(170.5 < Y < 199.5). Is her reasoning justified? Why or why not?
+
+```{r}
+set.seed(1)
+Nsimulation=10^4 #n=40
+urn.model <- function(urn, n) {
+  sum(sample(urn, n, replace = TRUE))
+}
+
+#simulation
+simulation=replicate(Nsimulation, urn.model(urn, n)) #this stores 10^4 simulations
+
+#interval
+## Estimate probability P(170.5 < Y < 199.5)
+phat <- mean(simulation >= 171 & simulation <= 199)
+phat
+```
+
+```{r}
+clt_prob = pnorm(199.5, mean=EY, sd=SDY) -pnorm(170.5, mean=EY, sd=SDY)
+clt_prob   # CLT estimate
+
+```
+
+**phat(0.45) and clt probability (0.45) are very close, so it justifies her reasoning.**
+
+5. Another student suggests that P(170.5 < Y < 199.5) can be approximated by performing the following R commands:
+
+```{r}
+se <- sqrt(585.6) #sqrt(var(y))
+pnorm(199.5,mean=184,sd=se)-pnorm(170.5,mean=184,sd=se)
+```
+
+9. Do you agree? Why or why not?
+
+**his answer is also very close to the CLT probability calculated, it is also justified**
+
+10. Which approach will produce the more accurate approximation of P(170.5 < Y < 199.5) ? Explain your reasoning.
+
+**The first student's approach will produce a more accurate approximation using a larger n and replicating the experiment multiple times (WLLN).**
+
+
+\newpage
+
+# Question 2
+
+Assume that one can of Coke weighs on average 351 grams and one can of Pepsi weighs on average 350 grams, and both have a standard deviation of 1 gram. If you select at random 40 cans of Coke and 43 cans of Pepsi, do the following:
+a. If you let X_i represent the weight of the i-th Coke can (randomly selected) for i = 1, . . ., 40 and 40 the average weight of Coke cans, what is EXbar_40 and Var (Xbar_40)?
+
+```{r}
+Var.x=1
+SD.x=1
+X_i=351 #average weight of Coke
+n=40 #random 40 cans of Coke
+EXbar_40=351 #expected average=population mean
+Var.xbar_40=Var.x/n
+EXbar_40;Var.xbar_40
+```
+
+b. If you let Y; represent the weight of the j-th Pepsi can (randomly selected) for j = 1,..., 43 and Y43 the average weight of Pepsi cans, what is EY_43 and Var(Y43)?
+
+```{r}
+Y43=350 #average weight of Pepsi
+EY_43=350 #expected average=population mean
+n=43 #random 43 cans of Pepsi
+Var.Y=1 
+Var_Y43=Var.Y/n
+EY_43;Var_Y43
+
+```
+
+c. Can you find, approximately, P (X1 > 351.4)? If yes, find it and report your value. If not, explain why not. 
+
+```{r}
+pnorm(351.4,351, 1, lower.tail=FALSE)
+```
+
+d. Can you find, approximately, P (X_40 > 351.4)? If yes, find it and report your value. If not, explain why not.
+
+```{r}
+pnorm(351.4,351,sqrt(Var.xbar_40), lower.tail=FALSE)
+```
+
+e. Find the probability that the average weight of 40 Coke cans is greater than the average weight of 43 Pepsi cans.
+
+```{r}
+mu1=351
+mu2=350
+sigma1=1
+sigma2=1
+n1=40
+n2=43
+
+new.mean=mu1-mu2
+new.sd=sqrt(Var.xbar_40)+sqrt(Var_Y43) #var(a-b)=var(a)+var(b)
+
+pnorm(0,new.mean,new.sd,lower.tail=FALSE)
+```
+
+\newpage
+
+# Question 3
+
+To study the effects of Alzheimer's disease (AD) on cognition, a scientist administers two batteries of neuropsychological tasks to 60 mildly demented AD patients. One battery is administered in the morning, the other in the afternoon. Each battery includes a task in which discourse is elicited by showing the patient a picture and asking the patient to describe it. The quality of the discourse is measured by counting the number of "information units" conveyed by the patient. The scientist wonders if asking a patient to describe Picture A in the morning is equivalent to asking the same patient to describe Picture B in the afternoon, after having described Picture A several hours earlier. To investigate, she computes the number of information units for Picture A minus the number of information units for Picture B for each patient. She finds an average difference of x = -0.1833, with a sample standard deviation of s = 5.18633. Formulate null and alternative hypotheses that are appropriate for this situation. Calculate a significance probability. Do these results warrant rejecting the null hypothesis at a significance level of = 0.05 ?
+
+```{r}
+#null hypothesis
+H0=0 #no difference between picture A and picture B
+#alternative: Ha does not equal 0
+# significance level=0.05
+
+n=60
+xbar=-0.1833
+s=5.18633
+se=s/sqrt(n)
+tstat=(xbar-H0)/se
+p_value=2*(1-pt(abs(tstat),df=n-1))
+tstat; p_value
+```
+
+**0.78>0.05 (the significance level) so failed to reject H0 (the null hypothesis)**
+**no evidence of a difference between picture A and B**
+
+\newpage
+
+# Question 4
+
+A test for psychic powers consists of guessing which side of a screen a picture will appear on: left or right. In one trial of the test, a student has to guess “Left” or “Right”; then R’s random number generator will randomly choose one side of the screen to display a picture of a star. The student repeats the process for a total of 20 trials.
+
+A. In words, the null hypothesis for a particular student is that they don’t have psychic powers and they’re just randomly guessing. The alternative hypothesis is that they do have psychic powers and, in the long run, they can do better than randomly guessing. Let p
+be the probability that the student guesses correctly on any particular trial. Write down mathematical null and alternative hypotheses in terms of p
+
+```{r}
+p=H0<=0.5 #null hypothesis (student is just guessing either right or left)
+#alternative H_a: P>0.5
+```
+
+
+B. Suppose the null hypothesis is true for a particular student. Let Y be the number of times the students guess correctly. Then if the null is true, Y~Binomial (20,0.5). Is there intriguing evidence that the student has psychic powers if the student guesses 13 right out of 20? Obtain the p value to answer this question.
+
+```{r}
+binom.test(13,20,p=0.5,alternative="greater")
+```
+p_value=0.1316
+
+C. Repeat part b if a student guesses 18 right out of 20.
+
+```{r}
+binom.test(18,20,p=0.5,alternative="greater")
+```
+p_value=0.0002012
+
+
+\newpage
+
+# Quesiton 5
+
+ The U.S. Food and Drug Administration requires evaporated milk to contain "not less than 23 percent by weight of total milk solids." A company that sells evaporated milk is sued by a group of consumers who are concerned that the company's product does not meet FDA standards. The two parties agree to binding arbitration. If the consumers win, the company will pay damages and enhance its product; if the company wins, then the consumers will issue a public apology.
+To resolve the dispute, the arbiter commissions a neutral study in which the percent by weight of total milk solids will be measured in a random sample of n = 225 packages produced by the company. Both parties agree to a standard of proof (a = 0.05), but they disagree on which party should bear the burden of proof.
+
+1. (a) State appropriate null and alternative hypotheses from the perspective of the consumers.
+
+$$H_0: \mu \le23$$
+$$H_1: \mu > 23$$
+
+2. (b) State appropriate null and alternative hypotheses from the perspective of the company.
+
+$$H_0: \mu \ge23$$
+$$H_1: \mu < 23$$
+
+3. (c) Suppose that the random sample reveals a sample mean of x = 22.8 percent with a sample standard deviation of s=3 percent. Compute t, the value of the test statistic.
+
+```{r}
+n=225
+xbar=22.8
+H0=23
+s=3
+se= s/sqrt(n)
+tstat=(xbar-H0)/se
+p_value= pt(tstat, df=n-1, lower.tail=FALSE)
+tstat
+```
+
+4. (d) From the consumers' perspective, what action should be taken? Why?
+
+```{r}
+p_value= pt(tstat, df=n-1, lower.tail=FALSE)
+p_value
+```
+
+**0.84> 0.05 (the standard) so failed to reject H0. 
+fail to prove the milk has more than 23% milk solids. Company loses**
+in other words: failed to reject consumer's claim.
+
+5. (e) From the company's perspective, what action should be taken? Why?
+
+```{r}
+p_value= pt(tstat, df=n-1, lower.tail=TRUE)
+p_value
+```
+
+0.15>0.05 so failed to reject H0
+fail to prove the milk has less than 23% solid, consumer lose. 
+in other wods: failed to reject company's claim
+
+**both company and consumer failed to prove their claim. result will depend on who has the burden of proof**
+
+\newpage
+
+# Quesiton 6
+
+Continue working with Exercise 4. Do the following:
+
+A. Let's assume we learned that the company's average percent by weight of total milk solids is mu=23.4. Based on your conclusion in 4d, you committed a Type I Error, a Type II Error, or have you made a correct decision? Briefly explain. 
+
+**
+Type 1 error: rejecting a true null hypothesis.
+
+Type 2 error: failed to reject null hypothesis when it's false.
+
+we failed to reject null hypothesis of (mu<=23) when it is false, so it's a type 2 error**
+
+
+B. In terms of 5e, have you committed a Type I Error, Type II Error, or have you made a correct decision? Briefly explain. 
+
+**
+Type 1 error: rejecting a true null hypothesis.
+
+Type 2 error: failed to reject null hypothesis when it's false.
+
+we failed to reject the null (H_0 >=23) when it's true, it is a correct decision**
+
+
+C. Recalculate t as in 4c, using the same xbar and s but now assuming that the sample is actually n = 800. Does your conclusion in 4e change? Show your work.
+
+```{r}
+n=800
+xbar=22.8
+H0=23
+s=3
+se= s/sqrt(n)
+tstat=(xbar-H0)/se
+p_value= pt(tstat, df=n-1, lower.tail=FALSE)
+tstat;p_value
+```
+
+**0.97 is still greater than 0.05. conclusion does not change.**
+
+
+D. If your answer in 5e has changed, have you now committed a Type I Error, a Type II Error, or have you made a correct decision? Briefly explain.
+
+**answer in 5e: 0.15>0.05 so failed to reject H0
+fail to prove the milk has less than 23% solid, consumer lose.
+in other wods: failed to reject company's claim**
+
+**if my answer in 5e has changed, meaning I rejected the null hypothesis of $\mu\ge23$, when it's actually true. which is a type 1 error.**
+
+
+E. Assume that sd = 3 (so you can use the z test), n = 250, and as in part (a), we assume that mu =23.4. Using significance level=0.04, calculate the probability of committing a Type II Error and the power of the test.
+
+```{r}
+n=250
+xbar=23.4
+H_0=23
+sd=3
+alpha=0.04
+se=sd/sqrt(n)
+
+zcrit <- qnorm(alpha)   # how many se from mean
+xcrit <- H_0 + zcrit * se # the point that separates the rejection zones
+zcrit; xcrit
+
+```
+**reject null if it is less than 22.67**
+
+
+```{r}
+#type 2 error=beta 
+beta <- 1 - pnorm((xcrit - 23.4)/se) # convert to normal z score, pnorm gives the probability below that score.
+power <- 1-beta
+beta;power
+```
+
+
+A. Hint: It is easier to do this by drawing these areas first. Start by drawing a plot with two normal curves with the same standard deviations, but one centered on the hypothesized value of mu and the other on the true value of mu. Then, the relevant areas under these curves are determined by the intervals of values (x-axis) that may lead to rejecting (or fail to reject) the null hypothesis (based on the significance level), which in turn will lead to determining the areas that correspond to a Type II Error and the power. Once you have drawn these areas, qnorm() can be used to obtain relevant quantiles on the x-axis, and pnorm() can be used to obtain the desired probabilities.
+
+!["handdrawn"](/Users/vivianwu/Desktop/plot.png)
+
+
+
